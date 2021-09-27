@@ -1,68 +1,107 @@
+from bs4 import BeautifulSoup
 import requests
-import lxml.html as html
+from requests.exceptions import ConnectionError
 import os
-import datetime
 
-#Se crean las constantes que contienen las diferentes expresiones en Xpath y el link
+# link = 'https://docs.python.org/3.8/library/tkinter.html'
+# link = 'https://www.larepublica.co/'
+directorio = 'textDir'
 
-HOME_URL = 'https://www.larepublica.co/'
 
-XPATH_LINK_TO_ARTICLE = '//text-fill/a[@*]/@href' #Se cambia h2 por "text-fill"
-XPATH_TITLE = '//div[@class="mb-auto"]/text-fill/span/text()'
-XPATH_SUMMARY = '//div[@class="lead"]/p/text()'
-XPATH_BODY = '//div[@class="html-content"]/p[not(@class)]/text()'
+# Esta funcion borra todos los archivos de ejecuciones pasadas
+def eraseCache():
+    for root, dirs, files in os.walk(directorio):
+        for name in files:
+            os.unlink(os.path.join(root, name))
 
-def parse_notice(link, today):
+
+def formatString(link):
+    link = link.replace('<title>', '')
+    link = link.replace('</title>', '')
+    link = link.replace(' ', '')
+    link = link.replace('|', '')
+    link = link.replace('?', '')
+    link = link.replace('¿', '')
+    link = link.replace('\"', '')
+    link = link.replace('\\', '')
+    link = link.replace('/', '')
+    link = link.replace('\n', '')
+    return link
+
+
+def extractText(link, directorio):
     try:
-        response = requests.get(link)
+        response = requests.get(link, timeout=(3, 27))
         if response.status_code == 200:
-            notice = response.content.decode('utf-8')
-            parsed = html.fromstring(notice)
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-            try:
-                title = parsed.xpath(XPATH_TITLE)[0]
-                title = title.replace('\"','') #se elimina las comillas dobles de los titulos
-                summary = parsed.xpath(XPATH_SUMMARY)[0]
-                body = parsed.xpath(XPATH_BODY)
-            except IndexError: #algunas noticias no tienen resumen asi que aun se deben almacenar
-                return
-            
-            with open(f'{today}/{title}.txt', 'w', encoding='utf-8') as f: #Por cada una de las noticias se creara un archivo con el contenido siguiente
+            if(soup.title == None):
+                # Si el link actual no tiene una etiqueta de titulo, el titulo sera el propio link formateado
+                title = link
+                title = formatString(title)
+            else:
+                try:
+                    title = soup.title.string
+                    title = formatString(title)
+
+                except ValueError as ve:
+                    print('El titulo no contiene el atributo string', ve)
+                    return
+
+            # Por cada una de las noticias se creara un archivo con el contenido siguiente
+            with open(f'{directorio}/{title}.txt', 'w', encoding='utf-8') as f:
                 f.write(title)
-                f.write('\n\n')
-                f.write(summary)
-                f.write('\n\n')
-                for p in body:
-                    f.write(p)
+                # f.white(link)
+                for text in soup.stripped_strings:
+                    f.write(text)
                     f.write('\n')
 
         else:
-             raise ValueError(f'Error: {response.status_code}')
-    except ValueError as ve:
-        print(ve)
+            return
+            # raise ValueError(f'Error: {response.status_code} con link: {link}')
+
+        response.close()
+    except requests.exceptions.Timeout:
+        print('El tiempo se agoto')
+
+    except ConnectionError:
+        print('Link caido')
 
 
-def parse_home():
+def searchLinks(link):
     try:
-        response = requests.get(HOME_URL) #se accede a la pagina principal
+        response = requests.get(link)  # se accede a la pagina principal
         if response.status_code == 200:
-            home = response.content.decode('utf-8') #La codificacon se cambia para un mejor manejo de caracteres latinos
-            parsed = html.fromstring(home) #se obtiene el documento HTML
-            links_to_notices = parsed.xpath(XPATH_LINK_TO_ARTICLE)
-            #print(links_to_notices)
-            today = datetime.date.today().strftime('%d-%m-%Y') #Se obtiene la fecha del dia de ejecuacion con el formato especificado
-            if not os.path.isdir(today):
-                os.mkdir(today)
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-            for link in links_to_notices:
-                parse_notice(link, today)
+            if not os.path.isdir(directorio):
+                os.mkdir(directorio)
+            else:
+                eraseCache()
+
+            for newLink in soup.find_all('a'):
+                try:
+                    if(newLink.get('href')):
+                        parsedLink = newLink.get('href').replace(' ', '')
+                        #print("se encontro el link: ", parsedLink)
+                        if parsedLink.find('_blank') > 0:
+                            continue
+                        elif parsedLink.find('sic') > 0:
+                            continue
+                        elif parsedLink[0:4] == 'http':
+                            pass
+                        else:
+                            parsedLink = link + parsedLink
+
+                        print(parsedLink)
+                        extractText(parsedLink, directorio)
+                    else:
+                        print('Link no valido')
+
+                except ValueError as ve:
+                    print(ve)
+
         else:
-            raise ValueError(f'Error{response.status_code}')
+            raise ValueError(f'Error{response.status_}')
     except ValueError as ve:
-        print(ve)
-
-def run():
-    parse_home()
-
-if __name__ == '__main__':
-    run()
+        print('Un error ocurrio:', ve)
