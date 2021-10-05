@@ -1,12 +1,13 @@
 from tkinter import *
 import tkinter.ttk as ttk
-from main import searchLinks
+from main import *
 
 link = 'https://docs.python.org/3.8/library/tkinter.html'
 
 window = Tk()
 window.title("Analizador de paginas")
 window.geometry("400x400")
+
 
 linkLabel = Label(window, text="Ingresa el link a evaluar:", font=10)
 linkLabel.place(x=10, y=30)
@@ -18,6 +19,15 @@ buttonAnalizar = Button(window, text="Analizar", command=lambda: searchLinks(
     textAreaLink.get()))
 
 buttonAnalizar.place(x=335, y=57)
+
+taskLabel = Label(window, text="Estado:", font=20)
+taskLabel.place(x=80, y=100)
+
+textoEstadoLabel = StringVar()
+textoEstadoLabel.set(estado)
+taskLabel = Label(window, text=textoEstadoLabel.get(), font=20)
+taskLabel.place(x=150, y=100)
+
 
 tableDraw = ttk.Treeview(window, columns=3)
 tableDraw.place(x=10, y=160)
