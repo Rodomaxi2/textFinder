@@ -5,36 +5,49 @@ import re
 import os
 from tkinter import *
 import tkinter.ttk as ttk
+import threading
 # from main import *
 
 # Logica y algoritmo
 directorio = 'textDir'
 
-estado = "Listo para trabajar"
 
 contadorGlobal = 0
-
 contadorAltas = 0
 contadorMedias = 0
 contadorBajas = 0
 
-palabrasPrueba = ['ocio']
+
+palabrasPrueba = ['Andorra', 'Capital']
 alta = ['violacion', 'misoginia', 'pornografia']
-media = ['sexo']
+media = ['sexo', 'sex', 'anal']
 baja = ['pendejo']
 
 # Esta funcion cuenta las palabras dentro de un texto que coincidan con el array dado
 
 
-def actualizarEstado(estado, label):
-    pass
+def actualizarTabla(contadorAltas, contadorMedias, contadorBajas):
+    tableDraw.item(0, text='',
+                   values=(str(contadorAltas), 'Alta', ""))
+    tableDraw.item(1, text='',
+                   values=(str(contadorMedias), 'Media', ""))
+    tableDraw.item(2, text='',
+                   values=(str(contadorBajas), 'Baja', ""))
+
+
+def actualizarEstado(estado):
+    if (estado == "Trabajando..."):
+        taskLabel.config(text=estado)
+        buttonAnalizar.config(state=DISABLED)
+    else:
+        taskLabel.config(text=estado)
+        buttonAnalizar.config(state=NORMAL)
 
 
 def contarPalabras(texto, palabras):
     contador = 0
     for palabra in palabras:
-        print(palabra)
-        coincidencias = re.findall(r'\w*' + palabra + '', texto)
+        coincidencias = re.findall(r'\w*' + palabra + '\w*', texto)
         contador += len(coincidencias)
     return contador
 
@@ -62,11 +75,7 @@ def formatString(link):
 
 
 def extractText(link, directorio):
-    contadorGlobal = 0
-
-    contadorAltas = 0
-    contadorMedias = 0
-    contadorBajas = 0
+    global contadorAltas, contadorMedias, contadorBajas
     try:
         response = requests.get(link, timeout=(3, 27))
         if response.status_code == 200:
@@ -84,9 +93,15 @@ def extractText(link, directorio):
                     print('El titulo no contiene el atributo string', ve)
                     return
 
-            contadorGlobal += contarPalabras(title, palabrasPrueba)
-            for text in soup.stripped_strings:
-                contadorGlobal = contarPalabras(text, palabrasPrueba)
+            contadorAltas += contarPalabras(title, alta)
+            contadorMedias += contarPalabras(title, media)
+            contadorBajas += contarPalabras(title, baja)
+
+            for text in soup.strings:
+                contadorAltas += contarPalabras(text, alta)
+                contadorMedias += contarPalabras(text, media)
+                contadorBajas += contarPalabras(text, baja)
+            print(contadorAltas)
             # Por cada una de las noticias se creara un archivo con el contenido siguiente
             # with open(f'{directorio}/{title}.txt', 'w', encoding='utf-8') as f:
             #     f.write(title)
@@ -112,16 +127,21 @@ def extractText(link, directorio):
 
 
 def searchLinks(link):
+    global contadorAltas, contadorMedias, contadorBajas
     try:
+
         response = requests.get(link)  # se accede a la pagina principal
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
-            estado = "Trabajando..."
+            actualizarEstado("Trabajando...")
 
             if not os.path.isdir(directorio):
                 os.mkdir(directorio)
             else:
                 eraseCache()
+
+            print(link)
+            extractText(link, directorio)
 
             for newLink in soup.find_all('a'):
                 try:
@@ -147,6 +167,8 @@ def searchLinks(link):
 
         else:
             raise ValueError(f'Error {response.status_code}')
+        actualizarTabla(contadorAltas, contadorMedias, contadorBajas)
+        actualizarEstado("Hecho")
     except ValueError as ve:
         print('Un error ocurrio:', ve)
 
@@ -163,20 +185,20 @@ linkLabel.place(x=10, y=30)
 textAreaLink = Entry(window, font=30, width=35)
 textAreaLink.place(x=10, y=60)
 
-buttonAnalizar = Button(window, text="Analizar", command=lambda: searchLinks(
-    textAreaLink.get()))
+global buttonAnalizar
+buttonAnalizar = Button(window, text="Analizar", command=lambda: threading.Thread(
+    target=searchLinks(textAreaLink.get())).start())
 
 buttonAnalizar.place(x=335, y=57)
 
-taskLabel = Label(window, text="Estado:", font=20)
-taskLabel.place(x=80, y=100)
+estadoLabel = Label(window, text="Estado:", font=20)
+estadoLabel.place(x=80, y=100)
 
-textoEstadoLabel = StringVar()
-textoEstadoLabel.set(estado)
-taskLabel = Label(window, text=textoEstadoLabel.get(), font=20)
+global taskLabel
+taskLabel = Label(window, text="Listo para trabajar", font=20)
 taskLabel.place(x=150, y=100)
 
-
+global tableDraw
 tableDraw = ttk.Treeview(window, columns=3)
 tableDraw.place(x=10, y=160)
 tableDraw['columns'] = ('numero', 'categoria', 'consejo')
