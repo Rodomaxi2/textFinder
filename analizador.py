@@ -6,7 +6,7 @@ import os
 from tkinter import *
 import tkinter.ttk as ttk
 import threading
-# from main import *
+from palabras import *
 
 # Logica y algoritmo
 directorio = 'textDir'
@@ -18,7 +18,7 @@ contadorMedias = 0
 contadorBajas = 0
 
 
-palabrasPrueba = ['Andorra', 'Capital']
+palabrasPrueba = prueba
 alta = ['violacion', 'misoginia', 'pornografia']
 media = ['sexo', 'sex', 'anal']
 baja = ['pendejo']
@@ -47,7 +47,7 @@ def actualizarEstado(estado):
 def contarPalabras(texto, palabras):
     contador = 0
     for palabra in palabras:
-        coincidencias = re.findall(r'\w*' + palabra + '\w*', texto)
+        coincidencias = re.findall(r'(?i)\w*' + palabra + '\w*', texto)
         contador += len(coincidencias)
     return contador
 
@@ -93,26 +93,15 @@ def extractText(link, directorio):
                     print('El titulo no contiene el atributo string', ve)
                     return
 
-            contadorAltas += contarPalabras(title, alta)
+            contadorAltas += contarPalabras(title, palabrasPrueba)
             contadorMedias += contarPalabras(title, media)
             contadorBajas += contarPalabras(title, baja)
 
             for text in soup.strings:
-                contadorAltas += contarPalabras(text, alta)
+                contadorAltas += contarPalabras(text, palabrasPrueba)
                 contadorMedias += contarPalabras(text, media)
                 contadorBajas += contarPalabras(text, baja)
             print(contadorAltas)
-            # Por cada una de las noticias se creara un archivo con el contenido siguiente
-            # with open(f'{directorio}/{title}.txt', 'w', encoding='utf-8') as f:
-            #     f.write(title)
-            #     contadorGlobal += contarPalabras(title, palabrasPrueba)
-            #     print(contadorGlobal)
-            #     for text in soup.stripped_strings:
-            #         f.write(text)
-            #         f.write('\n')
-            #         contadorGlobal = contarPalabras(text, palabrasPrueba)
-
-            # print(contadorGlobal)
 
         else:
             return
@@ -140,14 +129,11 @@ def searchLinks(link):
             else:
                 eraseCache()
 
-            print(link)
-            extractText(link, directorio)
-
             for newLink in soup.find_all('a'):
                 try:
                     if(newLink.get('href')):
                         parsedLink = newLink.get('href').replace(' ', '')
-                        #print("se encontro el link: ", parsedLink)
+                        # print("se encontro el link: ", parsedLink)
                         if parsedLink.find('_blank') > 0:
                             continue
                         elif parsedLink.find('sic') > 0:
