@@ -27,12 +27,24 @@ baja = categoriaBaja
 
 def actualizarTabla(contadorAltas, contadorMedias, contadorBajas):
     if (contadorAltas > 5):
-        tableDraw.item(0, text='',
-                       values=(str(contadorAltas), 'Alta', "Se sugiere que no se visite la pagina web"))
-        tableDraw.item(1, text='',
-                       values=(str(contadorMedias), 'Media', ""))
-        tableDraw.item(2, text='',
-                       values=(str(contadorBajas), 'Baja', ""))
+        mensajeAltas = "Se sugiere que no se visite la pagina web"
+    else:
+        mensajeAltas = "No se encontraron palabras de esta categoria"
+    if (contadorMedias > 5):
+        mensajeMedias = "La pagina puede contener vilencia se sugiere que sea visitada con un adulto"
+    else:
+        mensajeMedias = "No se encontraron palabras de esta categoria"
+    if (contadorBajas > 5):
+        mensajeBajas = "La pagina puede ser visitada por menores, sin embargo no se puede"
+    else:
+        mensajeBajas = "No se encontraron palabras de esta categoria"
+
+    tableDraw.item(0, text='',
+                   values=(str(contadorAltas), 'Alta', mensajeAltas))
+    tableDraw.item(1, text='',
+                   values=(str(contadorMedias), 'Media', mensajeMedias))
+    tableDraw.item(2, text='',
+                   values=(str(contadorBajas), 'Baja', mensajeBajas))
 
 
 def actualizarEstado(estado):
