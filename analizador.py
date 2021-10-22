@@ -8,7 +8,6 @@ import threading
 from palabras import *
 
 # Logica y algoritmo
-directorio = 'textDir'
 
 
 contadorGlobal = 0
@@ -66,12 +65,6 @@ def contarPalabras(texto, palabras):
 # Esta funcion borra todos los archivos de ejecuciones pasadas
 
 
-def eraseCache():
-    for root, dirs, files in os.walk(directorio):
-        for name in files:
-            os.unlink(os.path.join(root, name))
-
-
 def formatString(link):
     link = link.replace('<title>', '')
     link = link.replace('</title>', '')
@@ -86,7 +79,7 @@ def formatString(link):
     return link
 
 
-def extractText(link, directorio):
+def extractText(link):
     global contadorAltas, contadorMedias, contadorBajas
     try:
         response = requests.get(link, timeout=(3, 27))
@@ -136,11 +129,6 @@ def searchLinks(link):
             soup = BeautifulSoup(response.text, 'html.parser')
             actualizarEstado("Trabajando...")
 
-            # if not os.path.isdir(directorio):
-            #     os.mkdir(directorio)
-            # else:
-            #     eraseCache()
-
             for newLink in soup.find_all('a'):
                 try:
                     if(newLink.get('href')):
@@ -156,7 +144,7 @@ def searchLinks(link):
                             parsedLink = link + parsedLink
 
                         print(parsedLink)
-                        extractText(parsedLink, directorio)
+                        extractText(parsedLink)
                     else:
                         print('Link no valido')
 
