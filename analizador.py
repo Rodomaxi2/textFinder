@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 import requests
 from requests.exceptions import ConnectionError
 import re
-import os
 from tkinter import *
 import tkinter.ttk as ttk
 import threading
@@ -19,20 +18,21 @@ contadorBajas = 0
 
 
 palabrasPrueba = prueba
-alta = ['violacion', 'misoginia', 'pornografia']
-media = ['sexo', 'sex', 'anal']
-baja = ['pendejo']
+alta = categoriaAlta
+media = categoriaMedia
+baja = categoriaBaja
 
 # Esta funcion cuenta las palabras dentro de un texto que coincidan con el array dado
 
 
 def actualizarTabla(contadorAltas, contadorMedias, contadorBajas):
-    tableDraw.item(0, text='',
-                   values=(str(contadorAltas), 'Alta', ""))
-    tableDraw.item(1, text='',
-                   values=(str(contadorMedias), 'Media', ""))
-    tableDraw.item(2, text='',
-                   values=(str(contadorBajas), 'Baja', ""))
+    if (contadorAltas > 5):
+        tableDraw.item(0, text='',
+                       values=(str(contadorAltas), 'Alta', "Se sugiere que no se visite la pagina web"))
+        tableDraw.item(1, text='',
+                       values=(str(contadorMedias), 'Media', ""))
+        tableDraw.item(2, text='',
+                       values=(str(contadorBajas), 'Baja', ""))
 
 
 def actualizarEstado(estado):
@@ -82,7 +82,7 @@ def extractText(link, directorio):
             soup = BeautifulSoup(response.text, 'html.parser')
 
             if(soup.title == None):
-                # Si el link actual no tiene una etiqueta de titulo, el titulo sera el propio link formateado
+
                 title = link
                 title = formatString(title)
             else:
@@ -124,10 +124,10 @@ def searchLinks(link):
             soup = BeautifulSoup(response.text, 'html.parser')
             actualizarEstado("Trabajando...")
 
-            if not os.path.isdir(directorio):
-                os.mkdir(directorio)
-            else:
-                eraseCache()
+            # if not os.path.isdir(directorio):
+            #     os.mkdir(directorio)
+            # else:
+            #     eraseCache()
 
             for newLink in soup.find_all('a'):
                 try:
